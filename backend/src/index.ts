@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { reviewCode } from "./services/fakeAI";
+import { reviewCode } from "./core/reviewEngine";
 
 const app = new Hono();
 
