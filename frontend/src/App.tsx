@@ -1,3 +1,5 @@
+import { reviewCode } from "./services/api"
+import type { ReviewResult } from "./types/review"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,12 +18,30 @@ import {
 } from "@/components/ui/card"
 
 function App() {
+
   const [code, setCode] = useState("")
   const [language, setLanguage] = useState("javascript")
-  const [result, setResult] = useState("")
 
-  const handleAnalyze = () => {
-    setResult("Analyzing code...")
+  const [result, setResult] = useState<ReviewResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleAnalyze = async () => {
+    if (!code.trim()) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      setResult(null)
+
+      const data = await reviewCode(code, language)
+      setResult(data.result)
+
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -53,9 +73,11 @@ function App() {
               className="min-h-50"
             />
 
-            <Button onClick={handleAnalyze}>
-              Analyze
+            <Button onClick={handleAnalyze} disabled={loading}>
+              {loading ? "Analyzing..." : "Analyze Code"}
             </Button>
+
+            {error && <p className="text-red-500">{error}</p>}
 
           </CardContent>
         </Card>
@@ -63,10 +85,25 @@ function App() {
         {result && (
           <Card>
             <CardHeader>
-              <CardTitle>Result</CardTitle>
+              <CardTitle>Score: {result.score}/100</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p>{result}</p>
+            <CardContent className="space-y-3">
+              <p><strong>Language:</strong> {result.language}</p>
+              <p>{result.summary}</p>
+
+              <div>
+                <h3 className="font-semibold mb-2">Issues:</h3>
+                {result.issues.length === 0 && <p>No issues found</p>}
+
+                {result.issues.map((issue, i) => (
+                  <div key={i} className="border p-2 rounded">
+                    <p className="font-medium">{issue.message}</p>
+                    <p className="text-sm opacity-70">
+                      {issue.category} • {issue.severity}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
