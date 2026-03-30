@@ -10,13 +10,15 @@ app.get("/", (c) => {
 app.post("/review", async (c) => {
     try {
         const body = await c.req.json();
+
         const code = body.code;
+        const language = body.language;
 
         if (!code) {
             return c.json({ error: "Code is required" }, 400);
         }
 
-        const result = reviewCode(code);
+        const result = reviewCode(code, language);
 
         return c.json({ result });
     } catch (err) {
